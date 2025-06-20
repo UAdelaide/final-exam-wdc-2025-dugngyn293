@@ -14,7 +14,7 @@ dotenv.config();
 
 const app = express();
 
-// Middleware cơ bản
+// Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.json());
@@ -29,7 +29,7 @@ app.use(session({
     cookie: { secure: false } // Set true if using HTTPS
 }));
 
-// Middleware 
+// Middleware make sure user is authenticated
 function ensureAuthenticated(req, res, next) {
     if (req.session && req.session.user) return next();
     return res.redirect('/auth.html');
