@@ -159,8 +159,8 @@ app.get('/', ensureAuthenticated, (req, res) => {
     return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker.html');
 });
 
-app.get('/index.html', ensureAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/owner-dashboard.html', ensureAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'owner-dashboard.html'));
 });
 
 app.get('/walker.html', ensureAuthenticated, (req, res) => {
