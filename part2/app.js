@@ -136,8 +136,6 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-app.use('/api/walks', walkRoutes);
-app.use('/api/users', userRoutes);
 // Serve public assets BEFORE wildcard route
 app.use('/stylesheets', express.static(path.join(__dirname, 'public', 'stylesheets')));
 app.use('/Javascripts', express.static(path.join(__dirname, 'public', 'Javascripts')));
