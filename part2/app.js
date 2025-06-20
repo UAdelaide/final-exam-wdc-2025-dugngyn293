@@ -142,6 +142,43 @@ const userRoutes = require('./routes/userRoutes');
 
 app.use('/api/walks', walkRoutes);
 app.use('/api/users', userRoutes);
+// Serve public assets BEFORE wildcard route
+app.use('/stylesheets', express.static(path.join(__dirname, 'public', 'stylesheets')));
+app.use('/Javascripts', express.static(path.join(__dirname, 'public', 'Javascripts')));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
-// Export the app instead of listening here
+
+app.get('/auth.html', (req, res) => {
+    if (req.session.user) {
+        return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker.html');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'auth.html'));
+});
+
+app.get('/', ensureAuthenticated, (req, res) => {
+    return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker.html');
+});
+
+app.get('/index.html', ensureAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/walker.html', ensureAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'walker.html'));
+// Static files
+app.use('/public', ensureAuthenticated, express.static(path.join(__dirname, 'public')));
+
+// -----------------------------
+// 404 và error handler
+// -----------------------------
+
+app.use((req, res) => {
+    res.status(404).send('404 Not Found');
+});
+
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).send('Internal Server Error');
+});
+
 module.exports = app;
