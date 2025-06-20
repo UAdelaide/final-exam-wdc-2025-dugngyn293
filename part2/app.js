@@ -29,13 +29,13 @@ app.use(session({
     cookie: { secure: false } // Set true if using HTTPS
 }));
 
-// Middleware kiểm tra đăng nhập
+// Middleware 
 function ensureAuthenticated(req, res, next) {
     if (req.session && req.session.user) return next();
     return res.redirect('/auth.html');
 }
 
-// 👉 pre
+// 👉 prevent users to redirect main
 app.use((req, res, next) => {
     if (
         req.url.endsWith('.html') &&
