@@ -35,7 +35,7 @@ function ensureAuthenticated(req, res, next) {
     return res.redirect('/auth.html');
 }
 
-// 👉 Chặn truy cập trực tiếp file HTML nếu chưa login
+// 👉 pre
 app.use((req, res, next) => {
     if (
         req.url.endsWith('.html') &&
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 });
 
 
-// Router người dùng
+// Router
 app.use('/users', usersRouter);
 
 // -----------------------------
