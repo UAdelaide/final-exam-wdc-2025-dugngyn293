@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Classy Auth Form</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="../stylesheets/auth.css" />
+</head>
+
+<body>
+    <div id="loginApp">
+        <div class="login-box">
+            <div>
+                <h2>{{ isSignUp ? 'Create Account' : 'Classy Login Form' }}</h2>
+                <!-- ... phần <head> giữ nguyên ... -->
+
+                <template v-if="isSignUp">
+                    <div class="input-group">
+                        <i class="fa fa-user"></i>
+                        <input v-model="signupUsername" type="text" placeholder="Username" />
+                    </div>
+                    <div class="input-group">
+                        <i class="fa fa-envelope"></i>
+                        <input v-model="signupEmail" type="email" placeholder="Email" />
+                    </div>
+                    <div class="input-group">
+                        <i class="fa fa-lock"></i>
+                        <input :type="showPassword ? 'text' : 'password'" v-model="signupPassword"
+                            placeholder="Password" />
+                        <i class="fa" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'" @click="togglePassword"></i>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa fa-user-tag"></i>
+                        <select v-model="signupRole">
+                            <option disabled value="">Select Role</option>
+                            <option value="owner">Owner</option>
+                            <option value="walker">Walker</option>
+                        </select>
+                    </div>
+                    <button type="button" class="login-btn" @click="submitSignUp">Sign Up</button>
+                    <div class="toggle-link">
+                        Already have an account? <a @click="isSignUp = false">Login</a>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <div class="input-group">
+                        <i class="fa fa-user"></i>
+                        <input v-model="username" type="text" placeholder="Username" />
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fa fa-lock"></i>
+                        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Password" />
+                        <i class="fa" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'" @click="togglePassword"></i>
+                    </div>
+
+                    <div class="remember-box">
+                        <label><input type="checkbox" v-model="remember" /> Remember me</label>
+                        <a @click="openForgotPassword">Forgot Password?</a>
+                    </div>
+
+                    <button type="button" class="login-btn" @click="submitLogin">Login</button>
+                    <div v-if="showCaptcha" class="captcha-box">
+                        <label>Solve: {{ captchaQuestion }}</label>
+                        <input v-model="captchaAnswer" type="text" placeholder="Your answer" />
+                        <button type="button" @click="verifyCaptcha">Verify</button>
+                    </div>
+
+
+                    <div class="toggle-link">
+                        Don't have an account? <a @click="isSignUp = true">Sign up</a>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="modal" v-if="showForgotPassword">
+            <div class="modal-content">
+                <h3>Reset Password</h3>
+                <input v-model="resetUsername" type="text" placeholder="Username" />
+                <input v-model="newPassword" type="password" placeholder="New Password" />
+                <div class="modal-actions">
+                    <button type="button" class="close-btn" @click="closeForgotPassword">Cancel</button>
+                    <button type="button" class="submit-btn" @click="submitForgotPassword">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        createApp({
+            setup() {
+                const signupEmail = ref("");
+                const signupRole = ref("");
+
+                const showCaptcha = ref(false);
+                const captchaQuestion = ref('');
+                const captchaAnswer = ref('');
+                const expectedAnswer = ref(0);
+
+
+                const isSignUp = ref(false);
+                const username = ref("");
+                const password = ref("");
+                const remember = ref(false);
+                const signupUsername = ref("");
+                const signupPassword = ref("");
+                const showPassword = ref(false);
+
+                const showForgotPassword = ref(false);
+                const resetUsername = ref("");
+                const newPassword = ref("");
+
+                const generateCaptcha = () => {
+                    const getRandomNum = () => Math.floor(Math.random() * 21);
+                    const getRandomOp = () => (Math.random() < 0.5 ? '+' : '-');
+
+                    const a = getRandomNum();
+                    const b = getRandomNum();
+                    const c = getRandomNum();
+                    const op1 = getRandomOp();
+                    const op2 = getRandomOp();
+
+                    const expression = `${a} ${op1} ${b} ${op2} ${c}`;
+                    captchaQuestion.value = `${expression} = ?`;
+
+
+                    expectedAnswer.value = eval(expression);
+                };
+
+                const togglePassword = () => {
+                    showPassword.value = !showPassword.value;
+                };
+
+                const verifyCaptcha = () => {
+                    const userAnswer = parseInt(captchaAnswer.value);
+                    if (userAnswer === expectedAnswer.value) {
+                        localStorage.setItem('username', username.value);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Login successful!',
+                            toast: true,
+                            position: 'top-end',
+                            timer: 2000,
+                            showConfirmButton: false,
+                        }).then(() => {
+                            fetch('http://localhost:8080/check-auth')
+                                .then(r => r.json())
+                                .then(user => {
+                                    if (user.role === 'admin') {
+                                        window.location.href = 'admin.html';
+                                    } else {
+                                        window.location.href = 'index.html';
+                                    }
+                                });
+                        });
+                    } else {
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Wrong answer',
+                            text: 'Please try again.',
+                        });
+                        generateCaptcha();
+                        captchaAnswer.value = '';  // Reset input
+                    }
+                };
+
+                const openForgotPassword = () => {
+                    showForgotPassword.value = true;
+                };
+
+                const closeForgotPassword = () => {
+                    showForgotPassword.value = false;
+                    resetUsername.value = "";
+                    newPassword.value = "";
+                };
+
+                const submitForgotPassword = async () => {
+                    try {
+                        const res = await fetch("http://localhost:8080/api/reset-password", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                username: resetUsername.value,
+                                newPassword: newPassword.value,
+                            }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Password reset successful!',
+                                toast: true,
+                                position: 'top-end',
+                                timer: 2000,
+                                showConfirmButton: false,
+                            });
+                            closeForgotPassword();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Reset failed',
+                                text: data.message || "Unknown error",
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Error:", err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred.',
+                        });
+                    }
+                };
+
+                const submitLogin = async () => {
+                    try {
+                        const res = await fetch("http://localhost:8080/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                identifier: username.value,
+                                password: password.value,
+                            }),
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Login failed',
+                                text: data.message || "Unknown error",
+                            });
+                            return;
+                        }
+
+                        const user = await fetch('http://localhost:8080/check-auth').then(r => r.json());
+                        const userRole = user.role;
+                        const showCaptchaModal = () => {
+                            generateCaptcha();
+
+                            Swal.fire({
+                                title: `🔐 Solve this to continue`,
+                                html: `
+          <p><strong>${captchaQuestion.value}</strong></p>
+          <input id="captcha-input" type="number" placeholder="Answer" class="swal2-input" />
+        `,
+                                confirmButtonText: "Verify",
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                preConfirm: () => {
+                                    const inputVal = parseInt(document.getElementById('captcha-input').value);
+                                    if (isNaN(inputVal) || inputVal !== expectedAnswer.value) {
+                                        Swal.showValidationMessage("❌ Wrong answer. Try again!");
+                                        return false;
+                                    }
+                                    return true;
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // ✅ right answer
+                                    localStorage.setItem("username", username.value);
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Login successful!',
+                                        toast: true,
+                                        position: 'top-end',
+                                        timer: 2000,
+                                        showConfirmButton: false,
+                                    }).then(() => {
+                                        if (userRole === 'owner') {
+                                            window.location.href = 'index.html';
+                                        } else if (userRole === 'walker') {
+                                            window.location.href = 'walker.html';
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Unknown role',
+                                                text: 'User role is not recognized.',
+                                            });
+                                        }
+
+                                    });
+                                } else if (result.dismiss === Swal.DismissReason.cancel) {
+
+                                } else {
+                                    showCaptchaModal();
+                                }
+                            });
+                        };
+                        showCaptchaModal();
+
+                    } catch (err) {
+                        console.error("Error:", err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred.',
+                        });
+                    }
+                };
+
+
+                const submitSignUp = async () => {
+                    if (!signupUsername.value || !signupEmail.value || !signupPassword.value || !signupRole.value) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Missing fields',
+                            text: 'Please fill in all fields.',
+                        });
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch("http://localhost:8080/api/signup", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                username: signupUsername.value,
+                                email: signupEmail.value,
+                                password: signupPassword.value,
+                                role: signupRole.value,
+                            }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sign up successful!',
+                                text: 'Please log in.',
+                                toast: true,
+                                position: 'top-end',
+                                timer: 2000,
+                                showConfirmButton: false,
+                            });
+                            isSignUp.value = false;
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Sign up failed',
+                                text: data.message || "Unknown error",
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Error:", err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred.',
+                        });
+                    }
+                };
+                return {
+                    isSignUp,
+                    username,
+                    password,
+                    remember,
+                    signupUsername,
+                    signupPassword,
+                    showPassword,
+                    togglePassword,
+                    submitLogin,
+                    submitSignUp,
+                    showForgotPassword,
+                    resetUsername,
+                    newPassword,
+                    openForgotPassword,
+                    closeForgotPassword,
+                    submitForgotPassword,
+                    showCaptcha,
+                    captchaQuestion,
+                    captchaAnswer,
+                    verifyCaptcha,
+                    signupEmail,
+                    signupRole,
+                };
+            },
+        }).mount("#loginApp");
+    </script>
+
+</body>
+
+</html>
