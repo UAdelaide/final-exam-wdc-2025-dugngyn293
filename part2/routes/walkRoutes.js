@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../models/db');
+const db = require('../models/pool');
 
 // GET all walk requests (for walkers to view)
 router.get('/', async (req, res) => {
