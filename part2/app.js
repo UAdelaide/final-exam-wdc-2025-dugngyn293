@@ -136,6 +136,332 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
+
+app.post('/api/add-dog', async (req, res) => {
+    const { name, size } = req.body;
+    const owner_id = req.session?.user?.id;
+
+    if (!owner_id || !name || !size) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!['small', 'medium', 'large'].includes(size)) {
+        return res.status(400).json({ error: 'Invalid size value' });
+    }
+
+    try {
+        const imgRes = await fetch('https://dog.ceo/api/breeds/image/random');
+        const imgData = await imgRes.json();
+        const image_url = imgData?.message || `https://loremflickr.com/80/80/dog?random=${Math.floor(Math.random() * 1000)}`;
+
+
+        const connection = await pool.getConnection();
+
+        const [result] = await connection.query(
+            'INSERT INTO Dogs (owner_id, name, size, image_url) VALUES (?, ?, ?, ?)',
+            [owner_id, name, size, image_url]
+        );
+
+        connection.release();
+
+        res.status(201).json({
+            message: 'Dog added successfully',
+            dog_id: result.insertId,
+            image_url
+        });
+    } catch (error) {
+        console.error('Error adding dog:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+app.get('/api/my-dogs', async (req, res) => {
+    const owner_id = req.session?.user?.id;
+
+    if (!owner_id) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+        const [dogs] = await pool.query(
+            'SELECT dog_id, name, size, image_url FROM Dogs WHERE owner_id = ?',
+            [owner_id]
+        );
+        res.json(dogs);
+    } catch (err) {
+        console.error('Error fetching dogs:', err);
+        res.status(500).json({ error: 'Failed to fetch dogs' });
+    }
+});
+
+app.delete('/api/delete-dog/:id', async (req, res) => {
+    const owner_id = req.session?.user?.id;
+    const dog_id = req.params.id;
+
+    if (!owner_id) return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+        const [result] = await pool.query(
+            'DELETE FROM Dogs WHERE dog_id = ? AND owner_id = ?',
+            [dog_id, owner_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Dog not found or not owned by you' });
+        }
+
+        res.status(200).json({ message: 'Dog deleted' });
+    } catch (err) {
+        console.error('Error deleting dog:', err);
+        res.status(500).json({ error: 'Failed to delete dog' });
+    }
+});
+
+app.post('/owner/walk-request', async (req, res) => {
+    const owner_id = req.session?.user?.id;
+    const { dog_id, datetime, duration, location } = req.body;
+
+    if (!owner_id || !dog_id || !datetime || !duration || !location) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        // Insert
+        await pool.query(
+            `INSERT INTO WalkRequests (dog_id, requested_time, duration_minutes, location, status)
+             VALUES (?, ?, ?, ?, ?)`,
+            [dog_id, datetime, duration, location, 'open']
+        );
+
+        // insert into WalkRequestOwners
+        res.status(201).json({ message: 'Walk request created successfully' });
+
+    } catch (err) {
+        console.error('🚨 Error creating walk request:', err);
+        res.status(500).json({ error: 'Failed to create walk request' });
+    }
+});
+app.get('/api/my-walk-requests', async (req, res) => {
+    const ownerId = req.session.user?.id;
+
+    if (!ownerId) return res.status(401).json({ message: "Not logged in" });
+
+    try {
+        const [requests] = await pool.query(`
+      SELECT wr.*, d.name AS dog_name, d.image_url
+      FROM WalkRequests wr
+      JOIN Dogs d ON wr.dog_id = d.dog_id
+      WHERE d.owner_id = ?
+      ORDER BY wr.requested_time DESC
+    `, [ownerId]);
+
+        for (const req of requests) {
+            const [applications] = await pool.query(`
+        SELECT wa.application_id, wa.walker_id, u.username, wa.status
+        FROM WalkApplications wa
+        JOIN Users u ON wa.walker_id = u.user_id
+        WHERE wa.request_id = ?
+    `, [req.request_id]);
+
+            req.applications = applications;
+
+            // if the request is completed, find the accepted application
+            if (req.status === 'completed') {
+                const acceptedApp = applications.find(app => app.status === 'completed');
+                if (acceptedApp) {
+                    req.walker_id = acceptedApp.walker_id;
+                }
+            }
+        }
+
+
+        res.json(requests);
+    } catch (err) {
+        console.error('Error loading walk requests:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+// routes/walkRequests.js
+app.get('/api/walkrequests/available', async (req, res) => {
+    const walkerId = req.session.user?.id;
+    if (!walkerId) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+        const [rows] = await pool.query(`
+            SELECT
+                wr.request_id,
+                d.name AS dog_name,
+                DATE_FORMAT(wr.requested_time, '%Y-%m-%d') AS date,
+                DATE_FORMAT(wr.requested_time, '%H:%i') AS time,
+                wr.duration_minutes,
+                wr.location,
+                wa.status AS application_status,
+                wr.status AS walk_status
+            FROM WalkRequests wr
+            JOIN Dogs d ON wr.dog_id = d.dog_id
+            LEFT JOIN WalkApplications wa
+                ON wr.request_id = wa.request_id AND wa.walker_id = ?
+            WHERE wr.status IN ('open', 'accepted', 'completed')
+            ORDER BY wr.requested_time DESC
+        `, [walkerId]);
+
+        res.json(rows);
+    } catch (err) {
+        console.error('Error fetching walk requests:', err);
+        res.status(500).json({ message: 'Failed to fetch walk requests' });
+    }
+});
+
+app.post('/api/rate-walker', async (req, res) => {
+    const ownerId = req.session.user?.id;
+    if (!ownerId) return res.status(401).json({ message: 'Not logged in' });
+
+    const { request_id, walker_id, rating, comments } = req.body;
+
+    if (!request_id || !walker_id || !rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: 'Invalid data' });
+    }
+
+    try {
+        // Insert rating, prevent duplicate per request
+        await pool.query(`
+            INSERT INTO WalkRatings (request_id, walker_id, owner_id, rating, comments)
+            VALUES (?, ?, ?, ?, ?)
+        `, [request_id, walker_id, ownerId, rating, comments]);
+
+        res.status(200).json({ message: 'Rating submitted successfully' });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: 'This walk has already been rated.' });
+        }
+        console.error('Error submitting rating:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+app.post('/api/apply/:requestId', async (req, res) => {
+    const requestId = req.params.requestId;
+    const walkerId = req.session.user?.id;
+
+    if (!walkerId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    try {
+        await pool.query(
+            `INSERT INTO WalkApplications (request_id, walker_id, status)
+       VALUES (?, ?, 'pending')`,
+            [requestId, walkerId]
+        );
+
+        res.status(200).json({ message: 'Application submitted' });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            res.status(400).json({ message: 'You have already applied for this walk' });
+        } else {
+            console.error('Error inserting into WalkApplications:', err);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+});
+
+app.post('/owner/accept-application', async (req, res) => {
+    const { application_id, request_id } = req.body;
+
+    if (!application_id || !request_id) {
+        return res.status(400).json({ message: 'Missing data.' });
+    }
+
+    try {
+        // 1. update the application status to accepted
+        await pool.query(`
+            UPDATE WalkApplications
+            SET status = 'accepted'
+            WHERE application_id = ?
+        `, [application_id]);
+
+        // 2. reject all other applications for the same request
+        await pool.query(`
+            UPDATE WalkApplications
+            SET status = 'rejected'
+            WHERE request_id = ? AND application_id != ?
+        `, [request_id, application_id]);
+
+        // 3. update WalkRequest status to accepted
+        await pool.query(`
+            UPDATE WalkRequests
+            SET status = 'accepted'
+            WHERE request_id = ?
+        `, [request_id]);
+
+        res.json({ message: 'Application accepted!' });
+    } catch (err) {
+        console.error('Error accepting application:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.post('/api/complete/:requestId', async (req, res) => {
+    const walkerId = req.session.user?.id;
+    const requestId = req.params.requestId;
+
+    if (!walkerId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // update the WalkApplications status to completed
+        await pool.query(`
+            UPDATE WalkApplications
+            SET status = 'completed'
+            WHERE request_id = ? AND walker_id = ?
+        `, [requestId, walkerId]);
+
+        await pool.query(`
+            UPDATE WalkRequests
+            SET status = 'completed'
+            WHERE request_id = ?
+        `, [requestId]);
+
+        res.json({ message: 'Walk marked as completed' });
+    } catch (err) {
+        console.error('Complete error:', err);
+        res.status(500).json({ message: 'Failed to complete walk' });
+    }
+});
+
+app.get('/api/walker-summary', async (req, res) => {
+    const walkerId = req.session?.user?.id;
+
+    if (!walkerId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // count completed and pending walks
+        const [[completedRow]] = await pool.query(`
+            SELECT COUNT(*) AS completed FROM WalkApplications
+            WHERE walker_id = ? AND status = 'completed'
+        `, [walkerId]);
+
+        const [[pendingRow]] = await pool.query(`
+            SELECT COUNT(*) AS pending FROM WalkApplications
+            WHERE walker_id = ? AND status = 'pending'
+        `, [walkerId]);
+
+        const completed = completedRow.completed;
+        const pending = pendingRow.pending;
+        const totalEarnings = completed * 300;
+
+        res.json({ completed, pending, totalEarnings });
+    } catch (err) {
+        console.error('Error fetching summary:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
 // Serve public assets BEFORE wildcard route
 app.use('/stylesheets', express.static(path.join(__dirname, 'public', 'stylesheets')));
 app.use('/Javascripts', express.static(path.join(__dirname, 'public', 'Javascripts')));
