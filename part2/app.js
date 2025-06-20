@@ -144,7 +144,7 @@ app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 app.get('/auth.html', (req, res) => {
     if (req.session.user) {
-        return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker-dashboard.html');
+        return res.redirect(req.session.user.role === 'owner' ? '/owner-dashboard.html' : '/walker-dashboard.html');
     }
     res.sendFile(path.join(__dirname, 'public', 'auth.html'));
 });
