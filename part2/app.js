@@ -164,7 +164,7 @@ app.get('/owner-dashboard.html', ensureAuthenticated, (req, res) => {
 });
 
 app.get('/walker-dashboard.html', ensureAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'walker-dashboard.html'));
+    res.sendFile(path.join(__dirname, 'public', 'walker-dashboard.html'));}
     // Static files
     app.use('/public', ensureAuthenticated, express.static(path.join(__dirname, 'public')));
 
