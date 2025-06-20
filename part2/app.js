@@ -144,13 +144,13 @@ app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 app.get('/auth.html', (req, res) => {
     if (req.session.user) {
-        return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker.html');
+        return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker-dashboard.html');
     }
     res.sendFile(path.join(__dirname, 'public', 'auth.html'));
 });
 
 app.get('/', ensureAuthenticated, (req, res) => {
-    return res.redirect(req.session.user.role === 'owner' ? '/index.html' : '/walker.html');
+    return res.redirect(req.session.user.role === 'owner' ? '/owner-dashboard.html' : '/walker-dashboard.html');
 });
 
 app.get('/owner-dashboard.html', ensureAuthenticated, (req, res) => {
