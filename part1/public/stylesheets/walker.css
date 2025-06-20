@@ -1,0 +1,171 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #121212;
+    color: #f0f0f0;
+}
+
+header {
+    background: #1f1f1f;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.user-info a {
+    color: #ccc;
+    margin-left: 1rem;
+    text-decoration: none;
+}
+
+main {
+    padding: 2rem;
+}
+
+h1 {
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    color: #ffffff;
+}
+
+.summary {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card h2 {
+    margin-bottom: 0.5rem;
+    color: #4ea8ff;
+}
+
+.walks-section h2 {
+    margin-top: 2rem;
+    font-size: 1.4rem;
+    color: #4ea8ff;
+}
+
+.walk-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.walk-card {
+    width: 180px;
+    min-height: 190px;
+    background: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transition: 0.3s ease;
+}
+
+.walk-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.08);
+}
+
+.walk-card h3 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 0.5rem;
+}
+
+.walk-card p {
+    font-size: 0.9rem;
+    color: #bbbbbb;
+    margin: 0.3rem 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.walk-card .apply-button {
+    margin-top: 0.6rem;
+    padding: 0.4rem 0.8rem;
+    background-color: #4ea8ff;
+    color: black;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.walk-card .apply-button:hover {
+    background-color: #2196f3;
+}
+
+/* Status Tags */
+.tag {
+    margin-top: 0.6rem;
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+}
+
+.tag.waiting {
+    background-color: #3a3a3a;
+    color: #aaa;
+}
+
+.tag.in-progress {
+    background-color: #2a3f5f;
+    color: #4ea8ff;
+}
+
+.tag.rejected {
+    background-color: #5c1e1e;
+    color: #ff4d4d;
+}
+
+.tag.done {
+    background-color: #1e3d2f;
+    color: #4ade80;
+}
+
+.logout-button {
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+    background-color: #e04345;
+}
