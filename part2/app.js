@@ -135,7 +135,6 @@ app.post('/api/reset-password', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-app.use(express.static(path.join(__dirname, '/public')));
 
 // Routes
 const walkRoutes = require('./routes/walkRoutes');
