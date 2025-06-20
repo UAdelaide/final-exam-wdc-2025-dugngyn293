@@ -437,7 +437,7 @@ app.get('/api/walker-summary', async (req, res) => {
     if (!walkerId) return res.status(401).json({ message: 'Not logged in' });
 
     try {
-        // Đếm số completed và pending từ bảng WalkApplications
+        // count completed and pending walks
         const [[completedRow]] = await pool.query(`
             SELECT COUNT(*) AS completed FROM WalkApplications
             WHERE walker_id = ? AND status = 'completed'
