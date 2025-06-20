@@ -164,21 +164,22 @@ app.get('/owner-dashboard.html', ensureAuthenticated, (req, res) => {
 });
 
 app.get('/walker-dashboard.html', ensureAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'walker-dashboard.html'));}
-    // Static files
-    app.use('/public', ensureAuthenticated, express.static(path.join(__dirname, 'public')));
+    res.sendFile(path.join(__dirname, 'public', 'walker-dashboard.html'));
+});
+// Static files
+app.use('/public', ensureAuthenticated, express.static(path.join(__dirname, 'public')));
 
-    // -----------------------------
-    // 404 và error handler
-    // -----------------------------
+// -----------------------------
+// 404 và error handler
+// -----------------------------
 
-    app.use((req, res) => {
-        res.status(404).send('404 Not Found');
-    });
+app.use((req, res) => {
+    res.status(404).send('404 Not Found');
+});
 
-    app.use((err, req, res, next) => {
-        console.error(err.stack);
-        res.status(err.status || 500).send('Internal Server Error');
-    });
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).send('Internal Server Error');
+});
 
-    module.exports = app;
+module.exports = app;
