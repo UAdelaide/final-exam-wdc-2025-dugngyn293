@@ -485,7 +485,7 @@ app.get('/walker.html', ensureAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'walker.html'));
 });
 
-// Static files (sau khi xác thực)
+// Static files (after authenticated)
 app.use('/public', ensureAuthenticated, express.static(path.join(__dirname, 'public')));
 
 // -----------------------------
