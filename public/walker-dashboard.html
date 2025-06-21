@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Walker Dashboard</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3"></script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./stylesheets/walker.css" />
+</head>
+
+<body>
+  <div id="app">
+    <header>
+      <div class="logo">🐾 DogWalk</div>
+      <nav>
+        <a href="/logout" class="logout-button">Logout</a>
+      </nav>
+    </header>
+
+    <main v-if="username">
+      <h1>Hi, {{ username }}</h1>
+
+      <section class="summary">
+        <div class="card">
+          <h2>Completed</h2>
+          <p>{{ summary.completed }}</p>
+        </div>
+        <div class="card">
+          <h2>Pending</h2>
+          <p>{{ summary.pending }}</p>
+        </div>
+        <div class="card">
+          <h2>Total Earnings</h2>
+          <p>${{ summary.totalEarnings.toLocaleString() }}.00</p>
+        </div>
+      </section>
+
+      <!-- PENDING -->
+      <section class="walks-section">
+        <h2>Offer and Pending</h2>
+        <div class="walk-grid">
+          <div class="walk-card" v-for="walk in categorized.pending" :key="walk.request_id">
+            <p><strong>🐶 Dog:</strong> {{ walk.dog_name }}</p>
+            <p>📅 Date: {{ formatDate(walk.date) }}</p>
+            <p>⏰ Time: {{ formatTime(walk.time) }}</p>
+            <p>📍 Address: {{ walk.location }}</p>
+
+            <button v-if="!walk.application_status" @click="applyToRequest(walk)" class="apply-button">Apply</button>
+            <span v-else class="tag waiting">⏳ Pending</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACCEPTED -->
+      <section class="walks-section">
+        <h2>Accepted</h2>
+        <div class="walk-grid">
+          <div class="walk-card" v-for="walk in categorized.accepted" :key="walk.request_id">
+            <p><strong>🐶 Dog:</strong> {{ walk.dog_name }}</p>
+            <p>📅 Date: {{ formatDate(walk.date) }}</p>
+            <p>⏰ Time: {{ formatTime(walk.time) }}</p>
+            <p>📍 Address: {{ walk.location }}</p>
+
+            <button @click="completeWalk(walk)" class="apply-button">Complete</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- REJECTED -->
+      <section class="walks-section">
+        <h2>Rejected</h2>
+        <div class="walk-grid">
+          <div class="walk-card" v-for="walk in categorized.rejected" :key="walk.request_id">
+            <p><strong>🐶 Dog:</strong> {{ walk.dog_name }}</p>
+            <p>📅 Date: {{ formatDate(walk.date) }}</p>
+            <p>⏰ Time: {{ formatTime(walk.time) }}</p>
+            <p>📍 Address: {{ walk.location }}</p>
+            <span class="tag rejected">❌ Rejected</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- DONE -->
+      <section class="walks-section">
+        <h2>Done</h2>
+        <div class="walk-grid">
+          <div class="walk-card" v-for="walk in categorized.completed" :key="walk.request_id">
+            <p><strong>🐶 Dog:</strong> {{ walk.dog_name }}</p>
+            <p>📅 Date: {{ formatDate(walk.date) }}</p>
+            <p>⏰ Time: {{ formatTime(walk.time) }}</p>
+            <p>📍 Address: {{ walk.location }}</p>
+            <span class="tag done">✅ Completed</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- App logic -->
+  <script src="/javascripts/apply.js"></script>
+</body>
+
+</html>
