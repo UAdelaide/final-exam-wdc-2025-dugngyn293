@@ -1,0 +1,15 @@
+To test your computer setup.
+1. Checkout this repository
+2. Open a terminal window
+3. Change into the "starthere" folder:
+   cd starthere
+4. Run:
+   npm install
+5. Start a SQL Server:
+   service mysql start
+6. Run a server:
+   npm start
+7. Browse to localhost:8080 and the result will be a json formatted query of the database:
+[{"id":1,"title":"1984","author":"George Orwell"},{"id":2,"title":"To Kill a Mockingbird","author":"Harper Lee"},{"id":3,"title":"Brave New World","author":"Aldous Huxley"}]
+
+8. If this worked, then congratulations you are ready to start the exam.
