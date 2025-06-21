@@ -68,13 +68,13 @@ app.get('/check-auth', (req, res) => {
     }
 });
 
-    app.get('/logout', (req, res) => {
-        req.session.destroy(err => {
-            if (err) return res.status(500).json({ message: 'Logout failed' });
-            res.clearCookie('connect.sid');
-            res.redirect('/auth.html');
-        });
+app.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) return res.status(500).json({ message: 'Logout failed' });
+        res.clearCookie('connect.sid');
+        res.redirect('/auth.html');
     });
+});
 
 app.post('/api/signup', async (req, res) => {
     const { username, email, password, role } = req.body;
